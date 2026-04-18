@@ -9,8 +9,6 @@ async function startVoice(room, userId, name){
     myId = userId;
     myRoom = room;
 
-    localStorage.setItem("room", room);
-
     localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
     socket.emit("join-room", {
@@ -19,31 +17,36 @@ async function startVoice(room, userId, name){
         name
     });
 
-    // 🎤 detect speaking (simple)
-    const audioContext = new AudioContext();
-    const source = audioContext.createMediaStreamSource(localStream);
-    const analyser = audioContext.createAnalyser();
+    document.getElementById("status").innerText =
+        "Connected to " + room;
+
+    // 🔊 speaking detection
+    const audioCtx = new AudioContext();
+    const source = audioCtx.createMediaStreamSource(localStream);
+    const analyser = audioCtx.createAnalyser();
 
     source.connect(analyser);
 
     const data = new Uint8Array(analyser.frequencyBinCount);
 
-    function detect(){
+    function loop(){
+
         analyser.getByteFrequencyData(data);
 
-        let volume = data.reduce((a,b)=>a+b)/data.length;
+        let vol = data.reduce((a,b)=>a+b)/data.length;
 
         socket.emit("voice-state", {
             room: myRoom,
             userId: myId,
-            speaking: volume > 20
+            speaking: vol > 15
         });
 
-        requestAnimationFrame(detect);
+        requestAnimationFrame(loop);
     }
 
-    detect();
+    loop();
 
+    // 👥 update users UI
     socket.on("room-users", (users) => {
         if(window.renderUsers){
             window.renderUsers(users);
