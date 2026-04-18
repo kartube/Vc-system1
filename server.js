@@ -16,13 +16,12 @@ app.get("/login/:name", (req, res) => {
   res.json({ userId });
 });
 
+// rooms data
 const rooms = {};
 
 io.on("connection", (socket) => {
 
-  console.log("USER CONNECTED");
-
-  socket.on("join-room", ({ room, userId }) => {
+  socket.on("join-room", ({ room, userId, name }) => {
 
     if (!room || !userId) return;
 
@@ -30,33 +29,47 @@ io.on("connection", (socket) => {
 
     socket.room = room;
     socket.userId = userId;
+    socket.name = name || "Guest";
 
-    if (!rooms[room]) rooms[room] = [];
-    if (!rooms[room].includes(userId)) {
-        rooms[room].push(userId);
-    }
+    if (!rooms[room]) rooms[room] = {};
 
-    socket.to(room).emit("user-joined", userId);
+    rooms[room][userId] = {
+      id: userId,
+      name: socket.name,
+      speaking: false,
+      muted: false
+    };
 
-    console.log("JOIN:", userId, "ROOM:", room);
+    io.to(room).emit("room-users", rooms[room]);
+
+    socket.to(room).emit("user-joined", { userId, name: socket.name });
+
+    console.log("JOIN:", userId, room);
   });
 
-  socket.on("offer", (data) => {
-    socket.to(data.to).emit("offer", data);
+  socket.on("voice-state", ({ room, userId, speaking }) => {
+    if (!rooms[room] || !rooms[room][userId]) return;
+
+    rooms[room][userId].speaking = speaking;
+
+    io.to(room).emit("room-users", rooms[room]);
   });
 
-  socket.on("answer", (data) => {
-    socket.to(data.to).emit("answer", data);
-  });
+  socket.on("mute-state", ({ room, userId, muted }) => {
+    if (!rooms[room] || !rooms[room][userId]) return;
 
-  // 🔥 ICE candidates (دي كانت ناقصة عندك)
-  socket.on("ice-candidate", (data) => {
-    socket.to(data.to).emit("ice-candidate", data);
+    rooms[room][userId].muted = muted;
+
+    io.to(room).emit("room-users", rooms[room]);
   });
 
   socket.on("disconnect", () => {
-    if (socket.room && rooms[socket.room]) {
-      rooms[socket.room] = rooms[socket.room].filter(id => id !== socket.userId);
+    const room = socket.room;
+    const id = socket.userId;
+
+    if (rooms[room]) {
+      delete rooms[room][id];
+      io.to(room).emit("room-users", rooms[room]);
     }
   });
 
