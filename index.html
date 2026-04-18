@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Voice Chat</title>
+</head>
+
+<body style="background:#111;color:white;text-align:center;font-family:Arial">
+
+<h1>🎤 VC LOGIN</h1>
+
+<input id="name" placeholder="Enter name" style="padding:10px">
+<br><br>
+
+<button onclick="login()" style="padding:10px 20px">
+ENTER
+</button>
+
+<p id="status"></p>
+
+<script>
+async function login(){
+
+    const name = document.getElementById("name").value;
+    if(!name) return alert("Enter name");
+
+    document.getElementById("status").innerText = "Loading...";
+
+    const res = await fetch("/login/" + name);
+    const data = await res.json();
+
+    localStorage.setItem("userId", data.userId);
+
+    setTimeout(() => {
+        window.location = "/room.html";
+    }, 500);
+}
+</script>
+
+</body>
+</html>

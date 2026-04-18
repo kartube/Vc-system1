@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Panel</title>
+</head>
+
+<body style="background:#111;color:white;text-align:center;font-family:Arial">
+
+<h1>⚙️ ADMIN PANEL</h1>
+
+<input id="target" placeholder="User ID" style="padding:10px">
+<br><br>
+
+<button onclick="banUser()" style="padding:10px 20px;background:red;color:white">
+BAN USER
+</button>
+
+<button onclick="kickUser()" style="padding:10px 20px;background:orange;color:white">
+KICK USER
+</button>
+
+<p id="status"></p>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+const socket = io();
+
+function banUser(){
+
+    const target = document.getElementById("target").value;
+
+    if(!target) return alert("Enter User ID");
+
+    socket.emit("admin-ban", { target });
+
+    document.getElementById("status").innerText =
+        "Banned: " + target;
+}
+
+function kickUser(){
+
+    const target = document.getElementById("target").value;
+
+    if(!target) return alert("Enter User ID");
+
+    socket.emit("admin-kick", { target });
+
+    document.getElementById("status").innerText =
+        "Kicked: " + target;
+}
+</script>
+
+</body>
+</html>
