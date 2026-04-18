@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>KIMIC VC</title>
+<title>VC Login</title>
 </head>
 
-<body style="background:#0f0f12;color:white;text-align:center;font-family:Arial">
+<body style="background:#111;color:white;text-align:center;font-family:Arial">
 
-<h1>🎤 KIMIC Voice Chat</h1>
+<h1>🎤 Voice Chat</h1>
 
-<input id="name" placeholder="Enter your name" style="padding:10px">
+<input id="name" placeholder="Enter name" style="padding:10px">
 <br><br>
-<button onclick="login()" style="padding:10px 20px">Enter</button>
+
+<button onclick="login()" style="padding:10px 20px">
+ENTER
+</button>
 
 <p id="status"></p>
 
@@ -19,19 +22,36 @@ async function login(){
 
     const name = document.getElementById("name").value;
 
-    if(!name) return alert("Enter name");
+    if(!name){
+        alert("Enter name");
+        return;
+    }
 
-    const res = await fetch("/login/" + name);
-    const data = await res.json();
+    try {
 
-    localStorage.setItem("userId", data.userId);
-    localStorage.setItem("name", name);
+        document.getElementById("status").innerText = "Logging in...";
 
-    document.getElementById("status").innerText = "Logged in...";
+        const res = await fetch("/login/" + name);
+        const data = await res.json();
 
-    setTimeout(()=>{
-        window.location = "/room.html";
-    },1000);
+        if(!data.userId){
+            document.getElementById("status").innerText = "Login failed";
+            return;
+        }
+
+        localStorage.setItem("userId", data.userId);
+        localStorage.setItem("name", name);
+
+        document.getElementById("status").innerText = "Success ✔";
+
+        setTimeout(() => {
+            window.location.href = "/room.html";
+        }, 800);
+
+    } catch (err) {
+        console.log(err);
+        document.getElementById("status").innerText = "Server error";
+    }
 }
 </script>
 
