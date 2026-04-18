@@ -4,37 +4,64 @@
 <title>Room</title>
 </head>
 
-<body style="background:#111;color:white;text-align:center;font-family:Arial">
+<body style="background:#111;color:white;font-family:Arial">
 
-<h1>🎧 ROOM</h1>
+<h2>🎧 Voice Room</h2>
 
-<input id="room" placeholder="Room Code" style="padding:10px">
-<br><br>
+<button onclick="toggleMute()" id="muteBtn">Mute</button>
 
-<button onclick="join()" style="padding:10px 20px">
-Join Room
-</button>
-
-<p id="status"></p>
+<h3>👥 Users</h3>
+<div id="users"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/client.js"></script>
 
 <script>
-function join(){
+let room = localStorage.getItem("room");
+let userId = localStorage.getItem("userId");
+let name = localStorage.getItem("name");
 
-    const room = document.getElementById("room").value;
-    const userId = localStorage.getItem("userId");
+let muted = false;
 
-    if(!room){
-        alert("Enter room code");
-        return;
+function joinRoom(){
+    startVoice(room, userId, name);
+}
+
+function toggleMute(){
+    muted = !muted;
+
+    document.getElementById("muteBtn").innerText =
+        muted ? "Unmute" : "Mute";
+
+    socket.emit("mute-state", {
+        room,
+        userId,
+        muted
+    });
+
+    if(localStream){
+        localStream.getAudioTracks().forEach(t => {
+            t.enabled = !muted;
+        });
     }
+}
 
-    document.getElementById("status").innerText = "Joining room...";
+function renderUsers(users){
+    const div = document.getElementById("users");
+    div.innerHTML = "";
 
-    // 🔥 مهم: تحويله string + تأكيد الدخول
-    startVoice(room.toString(), userId);
+    Object.values(users).forEach(u => {
+
+        const el = document.createElement("div");
+
+        el.innerText = u.name + (u.speaking ? " 🔊" : "");
+
+        el.style.padding = "10px";
+        el.style.margin = "5px";
+        el.style.background = u.speaking ? "green" : "#333";
+
+        div.appendChild(el);
+    });
 }
 </script>
 
