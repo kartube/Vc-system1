@@ -1,30 +1,65 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Room</title>
+<title>Voice Room</title>
 </head>
 
-<body style="background:#111;color:white;font-family:Arial">
+<body style="background:#0f0f0f;color:white;font-family:Arial;margin:0">
 
-<h2>🎧 Voice Room</h2>
+<div style="padding:20px;border-bottom:1px solid #333">
+  <h2>🎧 Voice Room</h2>
 
-<button onclick="toggleMute()" id="muteBtn">Mute</button>
+  <input id="roomInput" placeholder="Enter Room Code"
+    style="padding:10px;width:200px">
 
-<h3>👥 Users</h3>
-<div id="users"></div>
+  <button onclick="joinRoom()"
+    style="padding:10px 15px">
+    Join
+  </button>
+
+  <button onclick="toggleMute()" id="muteBtn"
+    style="padding:10px 15px;margin-left:10px">
+    Mute
+  </button>
+</div>
+
+<div style="display:flex">
+
+  <!-- USERS -->
+  <div style="width:250px;border-right:1px solid #333;padding:10px">
+    <h3>👥 Users</h3>
+    <div id="users"></div>
+  </div>
+
+  <!-- MAIN -->
+  <div style="flex:1;padding:10px">
+    <h3 id="status">Not connected</h3>
+  </div>
+
+</div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="/client.js"></script>
 
 <script>
-let room = localStorage.getItem("room");
-let userId = localStorage.getItem("userId");
-let name = localStorage.getItem("name");
 
 let muted = false;
+let currentRoom = null;
 
 function joinRoom(){
-    startVoice(room, userId, name);
+    const room = document.getElementById("roomInput").value;
+
+    if(!room) return alert("Enter room code");
+
+    currentRoom = room;
+
+    document.getElementById("status").innerText =
+        "Joining room: " + room;
+
+    startVoice(room,
+        localStorage.getItem("userId"),
+        localStorage.getItem("name")
+    );
 }
 
 function toggleMute(){
@@ -33,20 +68,22 @@ function toggleMute(){
     document.getElementById("muteBtn").innerText =
         muted ? "Unmute" : "Mute";
 
-    socket.emit("mute-state", {
-        room,
-        userId,
-        muted
-    });
-
     if(localStream){
         localStream.getAudioTracks().forEach(t => {
             t.enabled = !muted;
         });
     }
+
+    socket.emit("mute-state", {
+        room: currentRoom,
+        userId: localStorage.getItem("userId"),
+        muted
+    });
 }
 
+// UI render
 function renderUsers(users){
+
     const div = document.getElementById("users");
     div.innerHTML = "";
 
@@ -54,15 +91,19 @@ function renderUsers(users){
 
         const el = document.createElement("div");
 
-        el.innerText = u.name + (u.speaking ? " 🔊" : "");
-
-        el.style.padding = "10px";
+        el.style.padding = "8px";
         el.style.margin = "5px";
-        el.style.background = u.speaking ? "green" : "#333";
+        el.style.background = u.speaking ? "green" : "#222";
+        el.style.borderRadius = "5px";
+
+        el.innerText =
+            (u.name || u.id) +
+            (u.speaking ? " 🔊" : "");
 
         div.appendChild(el);
     });
 }
+
 </script>
 
 </body>
